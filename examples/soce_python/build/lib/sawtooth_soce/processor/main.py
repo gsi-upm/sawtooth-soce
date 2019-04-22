@@ -114,8 +114,8 @@ def main(args=None):
         processor.start()
     except KeyboardInterrupt:
         pass
-    except Exception as e:  # pylint: disable=broad-except
-        print("Error: {}".format(e))
+#    except Exception as e:  # pylint: disable=broad-except
+#        print("Error: {}".format(e))
     finally:
         if processor is not None:
             processor.stop()

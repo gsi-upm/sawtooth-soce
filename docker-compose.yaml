@@ -98,7 +98,6 @@ services:
         python3 setup.py clean --all
         python3 setup.py build
         soce-tp-python -vv -C tcp://validator:4004
-        while true; do echo; sleep 2; done 
       "
     stop_signal: SIGKILL
 
@@ -110,9 +109,15 @@ services:
       - validator
     command: |
       bash -c "
+        cp -a /home/sawtooth/sawtooth_soce /usr/lib/python3/dist-packages/sawtooth_soce &&
+        cp /home/sawtooth/bin/soce /usr/bin/soce &&
+        cp /home/sawtooth/bin/soce-tp-python /usr/bin/soce-tp-python &&
         sawtooth keygen &&
         tail -f /dev/null
       "
+    volumes:
+      - ./bin:/home/sawtooth/bin
+      - ./examples/soce_python/sawtooth_soce:/home/sawtooth/sawtooth_soce
     stop_signal: SIGKILL
 
 

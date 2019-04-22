@@ -133,7 +133,7 @@ class SoceClient:
             raise SoceException(err)
 
     def _get_prefix(self):
-        return _sha512('soce'.encode('utf-8'))[0:6]
+        return _sha512("soce".encode('utf-8'))[0:6]
 
     def _get_address(self, name):
         soce_prefix = self._get_prefix()

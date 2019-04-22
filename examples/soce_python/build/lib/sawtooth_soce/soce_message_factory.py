@@ -24,9 +24,9 @@ class SoceMessageFactory:
             namespace=MessageFactory.sha512("soce".encode("utf-8"))[0:6],
             signer=signer)
 
-    def _game_to_address(self, game):
+    def _voting_to_address(self, votingName):
         return self._factory.namespace + \
-            self._factory.sha512(game.encode())[0:64]
+            self._factory.sha512(votingName.encode())[0:64]
 
     def create_tp_register(self):
         return self._factory.create_tp_register()
@@ -34,55 +34,51 @@ class SoceMessageFactory:
     def create_tp_response(self, status):
         return self._factory.create_tp_response(status)
 
-    def _create_txn(self, txn_function, game, action, space=None):
+    def _create_txn(self, txn_function, votingName, action, value=None):
         payload = ",".join([
-            str(game), str(action), str(space)
+            str(votingName), str(action), str(value)
         ]).encode()
 
-        addresses = [self._game_to_address(game)]
+        addresses = [self._voting_to_address(votingName)]
 
         return txn_function(payload, addresses, addresses, [])
 
-    def create_tp_process_request(self, action, game, space=None):
+    def create_tp_process_request(self, action, votingName, value=None):
         txn_function = self._factory.create_tp_process_request
-        return self._create_txn(txn_function, game, action, space)
+        return self._create_txn(txn_function, votingName, action, value)
 
-    def create_transaction(self, game, action, space=None):
+    def create_transaction(self, votingName, action, value=None):
         txn_function = self._factory.create_transaction
-        return self._create_txn(txn_function, game, action, space)
+        return self._create_txn(txn_function, votingName, action, value)
 
-    def create_get_request(self, game):
-        addresses = [self._game_to_address(game)]
+    def create_get_request(self, votingName):
+        addresses = [self._voting_to_address(votingName)]
         return self._factory.create_get_request(addresses)
 
-    def create_get_response(
-        self, game, board="---------", state="P1-NEXT", player1="", player2=""
-    ):
-        address = self._game_to_address(game)
+    def create_get_response(self, votingName, value = None):
+        address = self._voting_to_address(votingName)
 
         data = None
-        if board is not None:
-            data = ",".join([game, board, state, player1, player2]).encode()
+        if value is not None:
+            data = ",".join([votingName, value]).encode()
         else:
             data = None
 
         return self._factory.create_get_response({address: data})
 
-    def create_set_request(
-        self, game, board="---------", state="P1-NEXT", player1="", player2=""
-    ):
-        address = self._game_to_address(game)
+    def create_set_request(self, votingName, value = None):
+        address = self._voting_to_address(votingName)
 
         data = None
-        if state is not None:
-            data = ",".join([game, board, state, player1, player2]).encode()
+        if value is not None:
+            data = ",".join([votingName, value]).encode()
         else:
             data = None
 
         return self._factory.create_set_request({address: data})
 
-    def create_set_response(self, game):
-        addresses = [self._game_to_address(game)]
+    def create_set_response(self, votingName):
+        addresses = [self._voting_to_address(votingName)]
         return self._factory.create_set_response(addresses)
 
     def get_public_key(self):

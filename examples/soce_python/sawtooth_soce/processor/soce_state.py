@@ -4,7 +4,7 @@ import hashlib
 from sawtooth_sdk.processor.exceptions import InternalError
 
 
-SOCE_NAMESPACE = hashlib.sha512('soce'.encode("utf-8")).hexdigest()[0:6]
+SOCE_NAMESPACE = hashlib.sha512("soce".encode("utf-8")).hexdigest()[0:6]
 
 
 def _make_soce_address(name):
@@ -118,9 +118,9 @@ class SoceState:
     def _serialize(self, votings):
 
         votings_strs = []
-        for name, value in votings.items():
+        for name, voting in votings.items():
             voting_strs = ",".join(
-                [name, value])
+                [name, str(voting.value)])
             votings_strs.append(voting_strs)
 
         return "|".join(sorted(votings_strs)).encode()

@@ -33,7 +33,7 @@ class SoceTransactionHandler(TransactionHandler):
 
     @property
     def family_name(self):
-        return 'soce'
+        return "soce"
 
     @property
     def family_versions(self):
@@ -59,12 +59,12 @@ class SoceTransactionHandler(TransactionHandler):
             soce_state.set_voting(name, voting)
             _display("Player {} created a game.".format(signer[:6]))
 
-            _display('voting created: ', value)
+            _display('voting created: {}, value: {}'.format(name, value))
 
         elif action == 'sum':
-            value = int(value)
+            value_to_sum = int(value)
 
-            soce_state.sum_voting(name, value)
+            soce_state.sum_voting(name, value_to_sum)
 
             _display('value summed: ', value)
 
