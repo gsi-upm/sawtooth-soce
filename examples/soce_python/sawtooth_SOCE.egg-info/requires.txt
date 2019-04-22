@@ -1,0 +1,5 @@
+aiohttp
+colorlog
+protobuf
+sawtooth-sdk
+PyYAML

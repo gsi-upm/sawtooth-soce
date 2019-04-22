@@ -44,6 +44,20 @@ services:
       - validator
     entrypoint: xo-tp-python -vv -C tcp://validator:4004
 
+  soce-tp-python:
+    build:
+      context: .
+      dockerfile: examples/soce_python/Dockerfile-installed-${DISTRO}
+      args:
+        - http_proxy
+        - https_proxy
+        - no_proxy
+    image: sawtooth-soce-tp-python:${ISOLATION_ID}
+    container_name: sawtooth-soce-tp-python-default
+    depends_on:
+      - validator
+    entrypoint: soce-tp-python -vv -C tcp://validator:4004
+
   python-sdk:
     build:
       context: .

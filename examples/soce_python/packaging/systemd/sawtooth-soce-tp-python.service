@@ -1,0 +1,14 @@
+
+[Unit]
+Description=Sawtooth SOCE TP Python
+After=network.target
+
+[Service]
+User=sawtooth
+Group=sawtooth
+EnvironmentFile=-/etc/default/sawtooth-soce-tp-python
+ExecStart=/usr/bin/soce-tp-python $SAWTOOTH_SOCE_TP_PYTHON_ARGS
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

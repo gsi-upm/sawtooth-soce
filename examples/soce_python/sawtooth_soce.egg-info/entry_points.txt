@@ -1,0 +1,4 @@
+[console_scripts]
+soce = sawtooth_soce.soce_cli:main_wrapper
+soce-tp-python = sawtooth_soce.processor.main:main
+
