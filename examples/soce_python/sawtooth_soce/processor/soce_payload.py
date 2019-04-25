@@ -21,34 +21,46 @@ class SocePayload:
     def __init__(self, payload):
         try:
             # The payload is csv utf-8 encoded string
-            name, action, value = payload.decode().split(",")
+            action, name_id, configurations_preferences, sc_method = payload.decode().split(",")
+        
         except ValueError:
             raise InvalidTransaction("Invalid payload serialization")
 
-        if not name:
-            raise InvalidTransaction('Name is required')
+        if not name_id:
+            raise InvalidTransaction('Name of voting/id of voter is required')
 
-        if '|' in name:
-            raise InvalidTransaction('Name cannot contain "|"')
+        if '|' in name_id:
+            raise InvalidTransaction('Name of voting/id of voter cannot contain "|"')
 
         if not action:
             raise InvalidTransaction('Action is required')
 
-        if action not in ('create', 'sum'):
+        if action not in ('create-voter', 'create-voting', 'register-voter', 'apply-voting-method'):
             raise InvalidTransaction('Invalid action: {}'.format(action))
 
-        if action == 'sum':
-            if not value:
-                raise InvalidTransaction('Value to summed is required')
-            try:
-                valueInt = int(value)
-            except ValueError:
-                raise InvalidTransaction(
-                    'Value must be integer')
 
-        self._name = name
+        if action == 'create-voter':
+            
+            if not configurations_preferences:
+                raise InvalidTransaction('Preferences of the voter are required')
+            if not type(configurations_preferences) is dict:
+                raise InvalidTransaction('Preferences must be a dictionary')
+
+        elif action == 'create-voting':
+
+            if not configurations_preferences:
+                raise InvalidTransaction('Configurations to be voted are required')
+            if not type(configurations_preferences) is list:
+                raise InvalidTransaction('Configurations must be a list')
+            
+            if not sc_method:
+                raise InvalidTransaction('Social choice method is required')
+
+
         self._action = action
-        self._value = value
+        self._name_id = name_id
+        self._configurations_preferences = configurations_preferences
+        self._sc_method = sc_method
 
     @staticmethod
     def from_bytes(payload):

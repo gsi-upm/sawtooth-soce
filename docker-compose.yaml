@@ -109,15 +109,16 @@ services:
       - validator
     command: |
       bash -c "
-        cp -a /home/sawtooth/sawtooth_soce /usr/lib/python3/dist-packages/sawtooth_soce &&
-        cp /home/sawtooth/bin/soce /usr/bin/soce &&
-        cp /home/sawtooth/bin/soce-tp-python /usr/bin/soce-tp-python &&
         sawtooth keygen &&
         tail -f /dev/null
       "
     volumes:
       - ./bin:/home/sawtooth/bin
       - ./examples/soce_python/sawtooth_soce:/home/sawtooth/sawtooth_soce
+      - ./examples/soce_python/sawtooth_soce:/usr/lib/python3/dist-packages/sawtooth_soce
+      - ./bin/soce-tp-python:/usr/bin/soce-tp-python
+      - ./bin/soce:/usr/bin/soce
+
     stop_signal: SIGKILL
 
 

@@ -65,62 +65,41 @@ class SoceClient:
         self._signer = CryptoFactory(create_context('secp256k1')) \
             .new_signer(private_key)
 
-    def create(self, name, wait=None, auth_user=None, auth_password=None):
+    def create_voter(self, name, preferences, wait=None, auth_user=None, auth_password=None):
         return self._send_soce_txn(
-            name,
-            "create",
+            "create-voter",
+            name_id=name,
+            configurations_preferences_id=preferences,
             wait=wait,
             auth_user=auth_user,
             auth_password=auth_password)
 
-    def delete(self, name, wait=None, auth_user=None, auth_password=None):
+    def create_voting(self, name, configurations, sc_method, wait=None, auth_user=None, auth_password=None):
         return self._send_soce_txn(
-            name,
-            "delete",
+            action="create-voting",
+            name_id=name,
+            configurations_preferences_id=configurations,
+            sc_method=sc_method,
             wait=wait,
             auth_user=auth_user,
             auth_password=auth_password)
 
-    def sum(self, name, value, wait=None, auth_user=None, auth_password=None):
+    def register_voter(self, name, voter_id, wait=None, auth_user=None, auth_password=None):
         return self._send_soce_txn(
-            name,
-            "sum",
-            value,
+            action="register-voter",
+            name_id=name,
+            configurations_preferences_id=voter_id,
             wait=wait,
             auth_user=auth_user,
             auth_password=auth_password)
 
-    def list(self, auth_user=None, auth_password=None):
-        soce_prefix = self._get_prefix()
-
-        result = self._send_request(
-            "state?address={}".format(soce_prefix),
+    def apply_voting_method(self, name, wait=None, auth_user=None, auth_password=None):
+        return self._send_soce_txn(
+            "apply-voting-method",
+            name_id=name,
+            wait=wait,
             auth_user=auth_user,
             auth_password=auth_password)
-
-        try:
-            encoded_entries = yaml.safe_load(result)["data"]
-
-            return [
-                base64.b64decode(entry["data"]) for entry in encoded_entries
-            ]
-
-        except BaseException:
-            return None
-
-    def show(self, name, auth_user=None, auth_password=None):
-        address = self._get_address(name)
-
-        result = self._send_request(
-            "state/{}".format(address),
-            name=name,
-            auth_user=auth_user,
-            auth_password=auth_password)
-        try:
-            return base64.b64decode(yaml.safe_load(result)["data"])
-
-        except BaseException:
-            return None
 
     def _get_status(self, batch_id, wait, auth_user=None, auth_password=None):
         try:
@@ -137,8 +116,8 @@ class SoceClient:
 
     def _get_address(self, name):
         soce_prefix = self._get_prefix()
-        game_address = _sha512(name.encode('utf-8'))[0:64]
-        return soce_prefix + game_address
+        name_address = _sha512(name.encode('utf-8'))[0:64]
+        return soce_prefix + name_address
 
     def _send_request(self,
                       suffix,
@@ -169,7 +148,7 @@ class SoceClient:
                 result = requests.get(url, headers=headers)
 
             if result.status_code == 404:
-                raise SoceException("No such game: {}".format(name))
+                raise SoceException("No such resource: {}".format(name))
 
             if not result.ok:
                 raise SoceException("Error {}: {}".format(
@@ -185,24 +164,28 @@ class SoceClient:
         return result.text
 
     def _send_soce_txn(self,
-                     name,
-                     action,
-                     value="",
+                     action=None, 
+                     name_id=None, 
+                     configurations_preferences_id=None, 
+                     sc_method=None,
                      wait=None,
                      auth_user=None,
                      auth_password=None):
         # Serialization is just a delimited utf-8 encoded string
-        payload = ",".join([name, action, str(value)]).encode()
+        payload = ";".join([str(action), str(name_id),
+            str(configurations_preferences_id),
+            str(sc_method)]).encode()
 
         # Construct the address
-        address = self._get_address(name)
+        address = self._get_address(str(name_id))
+        address2 = self._get_address(str(configurations_preferences_id))
 
         header = TransactionHeader(
             signer_public_key=self._signer.get_public_key().as_hex(),
             family_name="soce",
             family_version="1.0",
-            inputs=[address],
-            outputs=[address],
+            inputs=[address, address2],
+            outputs=[address, address2],
             dependencies=[],
             payload_sha512=_sha512(payload),
             batcher_public_key=self._signer.get_public_key().as_hex(),

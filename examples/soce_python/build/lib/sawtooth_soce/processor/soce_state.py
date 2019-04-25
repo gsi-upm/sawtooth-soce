@@ -1,8 +1,7 @@
-
 import hashlib
-
 from sawtooth_sdk.processor.exceptions import InternalError
-
+import json
+import ast
 
 SOCE_NAMESPACE = hashlib.sha512("soce".encode("utf-8")).hexdigest()[0:6]
 
@@ -12,10 +11,19 @@ def _make_soce_address(name):
         hashlib.sha512(name.encode('utf-8')).hexdigest()[:64]
 
 
+class Voter:
+    def __init__(self, public_sign, voter_id = False, preferences = {}):
+        self.sign = public_sign
+        self.id = voter_id
+        self.preferences = preferences
+
 class Voting:
-    def __init__(self, name, value = 0):
+    def __init__(self, name, configurations = [], sc_method = False, winner = False, preferences = {}):
         self.name = name
-        self.value = value
+        self.configurations = configurations
+        self.winner = winner
+        self.method = sc_method
+        self.preferences = preferences
 
 
 class SoceState:
@@ -27,63 +35,92 @@ class SoceState:
         self._context = context
         self._address_cache = {}
 
-    def sum_voting(self, voting_name, value):
+    '''
+    def get_voters_preferences(self, voters_id):
 
-        voting = self.get_voting(voting_name)
-        voting.value += value
-        self.set_voting(voting_name, voting)
-        return voting.value
+        preferences = []
+        for voter_id in voters_id:
+            voter = self.get_voter(voter_id)
+            preferences.append(voter.preferences)
+        return preferences
+    '''
+
+    def set_voting(self, voting_name, voting):
+
+        votings = self._load_votings(voting_name=voting_name)
+        votings[voting_name] = voting
+        self._store_voting(voting_name, votings=votings)
+
+    def set_voter(self, voter_id, voter):
+
+        voters = self._load_voters(voter_id=voter_id)
+        voters[voter_id] = voter
+        self._store_voter(voter_id, voters=voters)
+
+    def get_voting(self, voting_name):
+
+        return self._load_votings(voting_name=voting_name).get(voting_name)
+
+    def get_voter(self, voter_id):
+
+        return self._load_voters(voter_id=voter_id).get(voter_id)
 
     def delete_voting(self, voting_name):
 
         votings = self._load_votings(voting_name=voting_name)
-
         del votings[voting_name]
         if votings:
             self._store_voting(voting_name, votings=votings)
         else:
             self._delete_voting(voting_name)
 
-    def set_voting(self, voting_name, voting):
+    def delete_voter(self, voter_id):
 
-
-        votings = self._load_votings(voting_name=voting_name)
-
-        votings[voting_name] = voting
-
-        self._store_voting(voting_name, votings=votings)
-
-    def get_voting(self, voting_name):
-
-        return self._load_votings(voting_name=voting_name).get(voting_name)
+        voters = self._load_voters(voter_id=voter_id)
+        del voters[voter_id]
+        if voters:
+            self._store_voter(voter_id, voters=voters)
+        else:
+            self._delete_voter(voter_id)
 
     def _store_voting(self, voting_name, votings):
+
         address = _make_soce_address(voting_name)
-
-        state_data = self._serialize(votings)
-
+        state_data = self._serialize_votings(votings)
         self._address_cache[address] = state_data
+        self._context.set_state(
+            {address: state_data},
+            timeout=self.TIMEOUT)
 
+    def _store_voter(self, voter_id, voters):
+
+        address = _make_soce_address(voter_id)
+        state_data = self._serialize_voters(voters)
+        self._address_cache[address] = state_data
         self._context.set_state(
             {address: state_data},
             timeout=self.TIMEOUT)
 
     def _delete_voting(self, voting_name):
         address = _make_soce_address(voting_name)
-
         self._context.delete_state(
             [address],
             timeout=self.TIMEOUT)
+        self._address_cache[address] = None
 
+    def _delete_voter(self, voter_id):
+        address = _make_soce_address(voter_id)
+        self._context.delete_state(
+            [address],
+            timeout=self.TIMEOUT)
         self._address_cache[address] = None
 
     def _load_votings(self, voting_name):
         address = _make_soce_address(voting_name)
-
         if address in self._address_cache:
             if self._address_cache[address]:
                 serialized_votings = self._address_cache[address]
-                votings = self._deserialize(serialized_votings)
+                votings = self._deserialize_votings(serialized_votings)
             else:
                 votings = {}
         else:
@@ -91,192 +128,87 @@ class SoceState:
                 [address],
                 timeout=self.TIMEOUT)
             if state_entries:
-
                 self._address_cache[address] = state_entries[0].data
-
-                votings = self._deserialize(data=state_entries[0].data)
-
+                votings = self._deserialize_votings(data=state_entries[0].data)
             else:
                 self._address_cache[address] = None
                 votings = {}
-
         return votings
 
-    def _deserialize(self, data):
+    def _load_voters(self, voter_id):
+        address = _make_soce_address(voter_id)
+        if address in self._address_cache:
+            if self._address_cache[address]:
+                serialized_voters = self._address_cache[address]
+                voters = self._deserialize_voters(serialized_voters)
+            else:
+                voters = {}
+        else:
+            state_entries = self._context.get_state(
+                [address],
+                timeout=self.TIMEOUT)
+            if state_entries:
+                self._address_cache[address] = state_entries[0].data
+                voters = self._deserialize_voters(data=state_entries[0].data)
+            else:
+                self._address_cache[address] = None
+                voters = {}
+        return voters
+
+    def _serialize_preferences(self, preferences):
+        p1 =  preferences
+        p2 = {}
+        for k, v in p1.items():
+            p2[k] = json.dumps(v)
+        p3 = json.dumps(p2)
+        return p3
+
+    def _deserialize_preferences(self, preferences):
+        p1 = ast.literal_eval(preferences)
+        p2 = {}
+        print('preferences: ', preferences)
+        for k, v in p1.items():
+            print('key: ', k, 'valor: ', v)
+            if  isinstance(v, dict):
+                p2[k] = v
+            else:
+                p2[k] = ast.literal_eval(v)
+        print('preferences 2: ', p2)
+        return p2
+
+    def _deserialize_votings(self, data):
 
         votings = {}
-        try:
-            for voting in data.decode().split("|"):
-                name, value = voting.split(",")
-
-                votings[name] = Voting(name, value)
-        except ValueError:
-            raise InternalError("Failed to deserialize voting data")
-
+        for voting in data.decode().split("|"):
+            name, configurations, sc_method, winner, preferences = voting.split(";")
+            votings[name] = Voting(name, ast.literal_eval(configurations), 
+                sc_method, winner, self._deserialize_preferences(preferences))
         return votings
 
-    def _serialize(self, votings):
+    def _deserialize_voters(self, data):
+
+        voters = {}
+        for voter in data.decode().split("|"):
+            name, voter_id, preferences = voter.split(";")
+            voters[name] = Voter(name, voter_id, ast.literal_eval(preferences))
+        return voters
+
+    def _serialize_votings(self, votings):
 
         votings_strs = []
         for name, voting in votings.items():
-            voting_strs = ",".join(
-                [name, str(voting.value)])
+            voting_strs = ";".join(
+                [name, json.dumps(voting.configurations), 
+                str(voting.method), str(voting.winner), 
+                json.dumps(voting.preferences)])
             votings_strs.append(voting_strs)
-
         return "|".join(sorted(votings_strs)).encode()
 
+    def _serialize_voters(self, voters):
 
-'''
-class Game:
-    def __init__(self, name, board, state, player1, player2):
-        self.name = name
-        self.board = board
-        self.state = state
-        self.player1 = player1
-        self.player2 = player2
-
-
-class SoceState:
-
-    TIMEOUT = 3
-
-    def __init__(self, context):
-        """Constructor.
-
-        Args:
-            context (sawtooth_sdk.processor.context.Context): Access to
-                validator state from within the transaction processor.
-        """
-
-        self._context = context
-        self._address_cache = {}
-
-    def delete_game(self, game_name):
-        """Delete the Game named game_name from state.
-
-        Args:
-            game_name (str): The name.
-
-        Raises:
-            KeyError: The Game with game_name does not exist.
-        """
-
-        games = self._load_games(game_name=game_name)
-
-        del games[game_name]
-        if games:
-            self._store_game(game_name, games=games)
-        else:
-            self._delete_game(game_name)
-
-    def set_game(self, game_name, game):
-        """Store the game in the validator state.
-
-        Args:
-            game_name (str): The name.
-            game (Game): The information specifying the current game.
-        """
-
-        games = self._load_games(game_name=game_name)
-
-        games[game_name] = game
-
-        self._store_game(game_name, games=games)
-
-    def get_game(self, game_name):
-        """Get the game associated with game_name.
-
-        Args:
-            game_name (str): The name.
-
-        Returns:
-            (Game): All the information specifying a game.
-        """
-
-        return self._load_games(game_name=game_name).get(game_name)
-
-    def _store_game(self, game_name, games):
-        address = _make_soce_address(game_name)
-
-        state_data = self._serialize(games)
-
-        self._address_cache[address] = state_data
-
-        self._context.set_state(
-            {address: state_data},
-            timeout=self.TIMEOUT)
-
-    def _delete_game(self, game_name):
-        address = _make_soce_address(game_name)
-
-        self._context.delete_state(
-            [address],
-            timeout=self.TIMEOUT)
-
-        self._address_cache[address] = None
-
-    def _load_games(self, game_name):
-        address = _make_soce_address(game_name)
-
-        if address in self._address_cache:
-            if self._address_cache[address]:
-                serialized_games = self._address_cache[address]
-                games = self._deserialize(serialized_games)
-            else:
-                games = {}
-        else:
-            state_entries = self._context.get_state(
-                [address],
-                timeout=self.TIMEOUT)
-            if state_entries:
-
-                self._address_cache[address] = state_entries[0].data
-
-                games = self._deserialize(data=state_entries[0].data)
-
-            else:
-                self._address_cache[address] = None
-                games = {}
-
-        return games
-
-    def _deserialize(self, data):
-        """Take bytes stored in state and deserialize them into Python
-        Game objects.
-
-        Args:
-            data (bytes): The UTF-8 encoded string stored in state.
-
-        Returns:
-            (dict): game name (str) keys, Game values.
-        """
-
-        games = {}
-        try:
-            for game in data.decode().split("|"):
-                name, board, state, player1, player2 = game.split(",")
-
-                games[name] = Game(name, board, state, player1, player2)
-        except ValueError:
-            raise InternalError("Failed to deserialize game data")
-
-        return games
-
-    def _serialize(self, games):
-        """Takes a dict of game objects and serializes them into bytes.
-
-        Args:
-            games (dict): game name (str) keys, Game values.
-
-        Returns:
-            (bytes): The UTF-8 encoded string stored in state.
-        """
-
-        game_strs = []
-        for name, g in games.items():
-            game_str = ",".join(
-                [name, g.board, g.state, g.player1, g.player2])
-            game_strs.append(game_str)
-
-        return "|".join(sorted(game_strs)).encode()
-'''
+        voters_strs = []
+        for name, voter in voters.items():
+            voter_strs = ";".join(
+                [name, str(voter.id), json.dumps(voter.preferences)])
+            voters_strs.append(voter_strs)
+        return "|".join(sorted(voters_strs)).encode()
