@@ -54,15 +54,24 @@ class SoceTransactionHandler(TransactionHandler):
         soce_state = SoceState(context)
         sc = SocialChoice()
 
-        action, name_id, configurations_preferences_id, sc_method = transaction.payload.decode().split(";")
+        socePayload = SocePayload.from_bytes(transaction.payload)
+
+        action = socePayload.action
+        name_id = socePayload.name_id
+        configurations_preferences_id = socePayload.configurations_preferences_id
+        sc_method = socePayload.sc_method
 
 
         if action == 'create-voter':
 
-            voter = Voter(public_sign = signer, voter_id = name_id, preferences = configurations_preferences_id)
+            preferences = configurations_preferences_id
+            if not configurations_preferences_id:
+                preferences = {}
+            voter = Voter(public_sign = signer, voter_id = name_id, preferences = preferences)
             soce_state.set_voter(name_id, voter)
 
             _display("Voter with id {} and public sign {}... created.".format(name_id, signer[:6]))
+
 
         elif action == 'create-voting':
 
@@ -71,14 +80,44 @@ class SoceTransactionHandler(TransactionHandler):
 
             _display("Voting with name {}, social choice method {} and configurations {} created.".format(name_id, sc_method, configurations_preferences_id))
 
+
         elif action == 'register-voter':
 
             voting = soce_state.get_voting(name_id)
             voter = soce_state.get_voter(configurations_preferences_id)
-            voting.preferences[voter.id] = voter.preferences
+            if voter.preferences.get(name_id):
+                preferences = voter.preferences.get(name_id)
+            else:
+                preferences = dict((el,0) for el in voting.configurations)
+                voter.preferences[name_id] = preferences
+            voting.preferences[configurations_preferences_id] = preferences
             soce_state.set_voting(name_id, voting)
 
             _display("Voter with id {} and public sign {}... registered in voting {}.".format(voter.id, signer[:6], name_id))
+
+
+        elif action == 'unregister-voter':
+
+            voting = soce_state.get_voting(name_id)
+            voter = soce_state.get_voter(configurations_preferences_id)
+            del voting.preferences[voter.id]
+            soce_state.set_voting(name_id, voting)
+
+            _display("Voter with id {} and public sign {}... unregistered from voting {}.".format(voter.id, signer[:6], name_id))
+
+
+        elif action == 'set-preferences':
+
+            preferences = sc_method
+            voter = soce_state.get_voter(configurations_preferences_id)
+            voting = soce_state.get_voting(name_id)
+            voter.preferences[name_id] = preferences
+            voting.preferences[configurations_preferences_id] = preferences
+            soce_state.set_voting(name_id, voting)
+            soce_state.set_voter(configurations_preferences_id, voter)
+
+            _display("Voter with id {} new preferences on voting {} are {}.".format(configurations_preferences_id, name_id, preferences))
+
 
         elif action == 'apply-voting-method':
 
@@ -92,6 +131,7 @@ class SoceTransactionHandler(TransactionHandler):
             soce_state.set_voting(voting_name, voting)
 
             _display("Winner applying {} in voting {} is {}.".format(voting_method, name_id, winner))
+
 
         else:
             raise InvalidTransaction('Unhandled action: {}'.format(

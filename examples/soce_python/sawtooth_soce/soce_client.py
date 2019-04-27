@@ -93,6 +93,25 @@ class SoceClient:
             auth_user=auth_user,
             auth_password=auth_password)
 
+    def unregister_voter(self, name, voter_id, wait=None, auth_user=None, auth_password=None):
+        return self._send_soce_txn(
+            action="unregister-voter",
+            name_id=name,
+            configurations_preferences_id=voter_id,
+            wait=wait,
+            auth_user=auth_user,
+            auth_password=auth_password)
+
+    def set_preferences(self, name, voter_id, preferences, wait=None, auth_user=None, auth_password=None):
+        return self._send_soce_txn(
+            action="set-preferences",
+            name_id=name,
+            configurations_preferences_id=voter_id,
+            sc_method=preferences,
+            wait=wait,
+            auth_user=auth_user,
+            auth_password=auth_password)
+
     def apply_voting_method(self, name, wait=None, auth_user=None, auth_password=None):
         return self._send_soce_txn(
             "apply-voting-method",
@@ -100,6 +119,30 @@ class SoceClient:
             wait=wait,
             auth_user=auth_user,
             auth_password=auth_password)
+
+    def get_entity_info(self, name, auth_user=None, auth_password=None):
+        address = self._get_address(name)
+        result = self._send_request(
+            "state/{}".format(address),
+            name=name,
+            auth_user=auth_user,
+            auth_password=auth_password)
+        try:
+            return base64.b64decode(yaml.safe_load(result)["data"])
+        except BaseException:
+            return None
+
+    def get_all_info(self, auth_user=None, auth_password=None):
+        soce_prefix = self._get_prefix()
+        result = self._send_request(
+            "state?address={}".format(soce_prefix),
+            auth_user=auth_user,
+            auth_password=auth_password)
+        try:
+            encoded_entries = yaml.safe_load(result)["data"]
+            return [base64.b64decode(entry["data"]) for entry in encoded_entries]
+        except BaseException:
+            return None
 
     def _get_status(self, batch_id, wait, auth_user=None, auth_password=None):
         try:

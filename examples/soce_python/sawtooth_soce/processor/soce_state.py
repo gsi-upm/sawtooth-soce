@@ -167,6 +167,8 @@ class SoceState:
         p1 = ast.literal_eval(preferences)
         p2 = {}
         print('preferences: ', preferences)
+        if isinstance(p1, str):
+            return {}
         for k, v in p1.items():
             print('key: ', k, 'valor: ', v)
             if  isinstance(v, dict):
@@ -190,7 +192,7 @@ class SoceState:
         voters = {}
         for voter in data.decode().split("|"):
             name, voter_id, preferences = voter.split(";")
-            voters[name] = Voter(name, voter_id, ast.literal_eval(preferences))
+            voters[name] = Voter(name, voter_id, self._deserialize_preferences(preferences))
         return voters
 
     def _serialize_votings(self, votings):

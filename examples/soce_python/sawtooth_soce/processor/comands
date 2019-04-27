@@ -1,13 +1,18 @@
-soce create-voting 'voting1' '["a", "b"]' 'borda-voting' --url rest-api:8008
+soce create-voter 'voter1' '{}' --url rest-api:8008
 
-soce create-voter 'voter1' '{"a":1, "b":2}' --url rest-api:8008
+soce create-voting 'voting1' '["a", "b"]' 'borda-voting' --url rest-api:8008
 
 soce register-voter 'voting1' 'voter1' --url rest-api:8008
 
-soce apply-voting-method 'voting1' --url rest-api:8008
+soce get-all-info --url rest-api:8008
 
-soce create-voter 'voter2' '{"a":3, "b":0}' --url rest-api:8008
-
-soce register-voter 'voting1' 'voter2' --url rest-api:8008
+soce get-entity-info 'voting1' --url rest-api:8008
 
 soce apply-voting-method 'voting1' --url rest-api:8008
+
+soce set-preferences 'voting1' 'voter1' '{"a":3, "b":2}' --url rest-api:8008
+
+soce unregister-voter 'voting1' 'voter1' --url rest-api:8008
+
+
+

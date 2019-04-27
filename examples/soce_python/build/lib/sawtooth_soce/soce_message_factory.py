@@ -35,8 +35,8 @@ class SoceMessageFactory:
         return self._factory.create_tp_response(status)
 
     def _create_txn(self, txn_function, name_id, action, value=None):
-        payload = ",".join([
-    ;       str(name_id), str(action), str(value)
+        payload = ";".join([
+           str(name_id), str(action), str(value)
         ]).encode()
 
         addresses = [self.voting_voter_to_address(name_id)]
