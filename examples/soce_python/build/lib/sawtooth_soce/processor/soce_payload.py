@@ -21,13 +21,20 @@ class SocePayload:
 
     def __init__(self, payload):
 
+        print('PAYLOADPAYLOADPAYLOADPAYLOADPAYLOADPAYLOADPAYLOADPAYLOADPAYLOADPAYLOADPAYLOADPAYLOADPAYLOADPAYLOADPAYLOAD', payload)
         actions = ['create-voter', 'create-voting', 'register-voter', 'unregister-voter', 'apply-voting-method', 'set-preferences', 'get-entity-info', 'get-all-info']
 
         try:
+            print(payload)
+            print(payload.decode())
             # The payload is csv utf-8 encoded string
             action, name_id, configurations_preferences_id, sc_method = payload.decode().split(";")
         
         except ValueError:
+
+            print('PAYLOADPAYLOADPAYLOADPAYLOADPAYLOADPAYLOADPAYLOADPAYLOADPAYLOADPAYLOADPAYLOADPAYLOADPAYLOADPAYLOADPAYLOAD', type(payload))
+            print('PAYLOADPAYLOADPAYLOADPAYLOADPAYLOADPAYLOADPAYLOADPAYLOADPAYLOADPAYLOADPAYLOADPAYLOADPAYLOADPAYLOADPAYLOAD', payload)
+            print('PAYLOADPAYLOADPAYLOADPAYLOADPAYLOADPAYLOADPAYLOADPAYLOADPAYLOADPAYLOADPAYLOADPAYLOADPAYLOADPAYLOADPAYLOAD', payload.decode())
             raise InvalidTransaction("Invalid payload serialization")
 
         if not action:

@@ -34,22 +34,25 @@ class SoceMessageFactory:
     def create_tp_response(self, status):
         return self._factory.create_tp_response(status)
 
-    def _create_txn(self, txn_function, name_id, action, value=None):
+    def _create_txn(self, txn_function, action = None, name_id = None, configurations_preferences_id = None, sc_method = None):
+        
         payload = ";".join([
-           str(name_id), str(action), str(value)
+           str(action), str(name_id), str(configurations_preferences_id), str(sc_method)
         ]).encode()
 
-        addresses = [self.voting_voter_to_address(name_id)]
+        print('txn en camino!', payload)
+        
+        addresses = [self.voting_voter_to_address(name_id), self.voting_voter_to_address(configurations_preferences_id)]
 
         return txn_function(payload, addresses, addresses, [])
 
-    def create_tp_process_request(self, action, name_id, value=None):
+    def create_tp_process_request(self, action = None, name_id = None, configurations_preferences_id = None, sc_method = None):
         txn_function = self._factory.create_tp_process_request
-        return self._create_txn(txn_function, name_id, action, value)
+        return self._create_txn(txn_function, action, name_id, configurations_preferences_id, sc_method)
 
-    def create_transaction(self, name_id, action, value=None):
+    def create_transaction(self, action = None, name_id = None, configurations_preferences_id = None, sc_method = None):
         txn_function = self._factory.create_transaction
-        return self._create_txn(txn_function, name_id, action, value)
+        return self._create_txn(txn_function, action, name_id, configurations_preferences_id, sc_method)
 
     def create_get_request(self, name_id):
         addresses = [self.voting_voter_to_address(name_id)]
@@ -69,6 +72,7 @@ class SoceMessageFactory:
     def create_set_request(self, action = None, name_id = None, configurations_preferences = None, sc_method = None):
         address = self.voting_voter_to_address(name_id)
 
+        print('create_set_request')
         data = None
         if value is not None:
             data = ";".join([str(action), str(name_id), str(configurations_preferences), str(sc_method)]).encode()

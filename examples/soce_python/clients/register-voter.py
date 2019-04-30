@@ -9,26 +9,50 @@ from sawtooth_sdk.protobuf.batch_pb2 import Batch
 from sawtooth_sdk.protobuf.batch_pb2 import BatchList
 import urllib.request
 from urllib.error import HTTPError
+import hashlib
 
+def _sha512(data):
+    return hashlib.sha512(data).hexdigest()
+
+def _get_prefix():
+    return _sha512("soce".encode('utf-8'))[0:6]
+
+def _get_address(name):
+    soce_prefix = _get_prefix()
+    name_address = _sha512(name.encode('utf-8'))[0:64]
+    return soce_prefix + name_address
 
 context = create_context('secp256k1')
 private_key = context.new_random_private_key()
 signer = CryptoFactory(context).new_signer(private_key)
 
 
+action = 'register-voter'
+name_id = 'voter1'
+configurations_preferences_id = 'voting1'
+sc_method = {}
+
 payload = {
-    'Verb': 'set',
-    'Name': 'foo',
-    'Value': 42}
+    'action': action,
+    'name_id': name_id,
+    'configurations_preferences_id': configurations_preferences_id,
+    'sc_method': sc_method
+}
 
+address = _get_address(str(name_id))
+address2 = _get_address(str(configurations_preferences_id))
 
-payload_bytes = cbor.dumps(payload)
+#payload_bytes = cbor.dumps(payload)
+
+payload_bytes = ";".join([str(action), str(name_id),
+            str(configurations_preferences_id),
+            str(None)]).encode()
 
 txn_header_bytes = TransactionHeader(
-    family_name='intkey',
+    family_name='soce',
     family_version='1.0',
-    inputs=['1cf1266e282c41be5e4254d8820772c5518a2c5a8c0c7f7eda19594a7eb539453e1ed7'],
-    outputs=['1cf1266e282c41be5e4254d8820772c5518a2c5a8c0c7f7eda19594a7eb539453e1ed7'],
+    inputs=[address, address2],
+    outputs=[address, address2],
     signer_public_key = signer.get_public_key().as_hex(),
     # In this example, we're signing the batch with the same private key,
     # but the batch can be signed by another party, in which case, the
