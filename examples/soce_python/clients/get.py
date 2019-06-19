@@ -30,9 +30,15 @@ def _get_address(name):
     return soce_prefix + name_address
 
 def _sha512(data):
+    print('data', data)
+    print(1, hashlib.sha512(data))
+    print(2, hashlib.sha512(data).hexdigest())
     return hashlib.sha512(data).hexdigest()
 
 def _get_prefix():
+    print(4, "soce".encode('utf-8'))
+    print(3, _sha512("soce".encode('utf-8'))[0:6])
+
     return _sha512("soce".encode('utf-8'))[0:6]
 
 def _send_request(suffix,
@@ -56,6 +62,8 @@ def _send_request(suffix,
         if content_type is not None:
             headers['Content-Type'] = content_type
 
+        print('url', url)
+        
         try:
             if data is not None:
                 result = requests.post(url, headers=headers, data=data)
@@ -75,7 +83,7 @@ def _send_request(suffix,
 
         except BaseException as err:
             raise SoceException(err)
-
+        print(result.text)
         return result.text
 
 
@@ -91,6 +99,7 @@ def get_entity_info(name, auth_user=None, auth_password=None):
 
 def get_all_info(auth_user=None, auth_password=None):
     soce_prefix = _get_prefix()
+    print(soce_prefix)
     result = _send_request(
         "state?address={}".format(soce_prefix),
         auth_user=auth_user,

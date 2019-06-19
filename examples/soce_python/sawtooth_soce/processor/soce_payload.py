@@ -21,8 +21,8 @@ class SocePayload:
 
     def __init__(self, payload):
 
-        print('PAYLOADPAYLOADPAYLOADPAYLOADPAYLOADPAYLOADPAYLOADPAYLOADPAYLOADPAYLOADPAYLOADPAYLOADPAYLOADPAYLOADPAYLOAD', payload)
         actions = ['create-voter', 'create-voting', 'register-voter', 'unregister-voter', 'apply-voting-method', 'set-preferences', 'get-entity-info', 'get-all-info']
+        print('ESTO ES EL PAYLOAD', payload)
 
         try:
             print(payload)
@@ -31,11 +31,9 @@ class SocePayload:
             action, name_id, configurations_preferences_id, sc_method = payload.decode().split(";")
         
         except ValueError:
+            print('ESTO ES EL PAYLOAD', payload)
 
-            print('PAYLOADPAYLOADPAYLOADPAYLOADPAYLOADPAYLOADPAYLOADPAYLOADPAYLOADPAYLOADPAYLOADPAYLOADPAYLOADPAYLOADPAYLOAD', type(payload))
-            print('PAYLOADPAYLOADPAYLOADPAYLOADPAYLOADPAYLOADPAYLOADPAYLOADPAYLOADPAYLOADPAYLOADPAYLOADPAYLOADPAYLOADPAYLOAD', payload)
-            print('PAYLOADPAYLOADPAYLOADPAYLOADPAYLOADPAYLOADPAYLOADPAYLOADPAYLOADPAYLOADPAYLOADPAYLOADPAYLOADPAYLOADPAYLOAD', payload.decode())
-            raise InvalidTransaction("Invalid payload serialization")
+            raise InvalidTransaction("Invalid payload serialization {}, {}".format(payload, type(payload)))
 
         if not action:
             raise InvalidTransaction('Action is required')

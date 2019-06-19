@@ -14,6 +14,8 @@
 # ------------------------------------------------------------------------------
 
 import logging
+import json
+import ast
 
 from sawtooth_soce.processor.socepy import SocialChoice
 
@@ -87,12 +89,14 @@ class SoceTransactionHandler(TransactionHandler):
             voter = soce_state.get_voter(configurations_preferences_id)
             if voter.preferences.get(name_id):
                 preferences = voter.preferences.get(name_id)
+                _display('preferences: {}'.format(preferences))
             else:
+                _display('preferences: {}'.format(voting.configurations))
                 preferences = dict((el,0) for el in voting.configurations)
                 voter.preferences[name_id] = preferences
             voting.preferences[configurations_preferences_id] = preferences
             soce_state.set_voting(name_id, voting)
-
+            soce_state.set_voter(configurations_preferences_id, voter)
             _display("Voter with id {} and public sign {}... registered in voting {}.".format(voter.id, signer[:6], name_id))
 
 
@@ -102,6 +106,7 @@ class SoceTransactionHandler(TransactionHandler):
             voter = soce_state.get_voter(configurations_preferences_id)
             del voting.preferences[voter.id]
             soce_state.set_voting(name_id, voting)
+            soce_state.set_voter(configurations_preferences_id, voter)
 
             _display("Voter with id {} and public sign {}... unregistered from voting {}.".format(voter.id, signer[:6], name_id))
 
@@ -111,8 +116,8 @@ class SoceTransactionHandler(TransactionHandler):
             preferences = sc_method
             voter = soce_state.get_voter(configurations_preferences_id)
             voting = soce_state.get_voting(name_id)
-            voter.preferences[name_id] = preferences
-            voting.preferences[configurations_preferences_id] = preferences
+            voter.preferences[name_id] = ast.literal_eval(preferences)
+            voting.preferences[configurations_preferences_id] = ast.literal_eval(preferences)
             soce_state.set_voting(name_id, voting)
             soce_state.set_voter(configurations_preferences_id, voter)
 
@@ -124,7 +129,7 @@ class SoceTransactionHandler(TransactionHandler):
             voting = soce_state.get_voting(name_id)
             voting_method = voting.method
             preferences = voting.preferences
-            print('esto son las preferencias: ', preferences)
+            _display('esto son las preferencias: {}'.format(preferences))
             winner = sc.social_choice(voting_method, preferences)
             voting.winner = winner
             voting_name = voting.name

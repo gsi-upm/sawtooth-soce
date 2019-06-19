@@ -1,18 +1,32 @@
-soce create-voter 'voter1' '{}' --url rest-api:8008
+soce create-voter 'VoterUsername' '{}' --url rest-api:8008
 
-soce create-voting 'voting1' '["a", "b"]' 'borda-voting' --url rest-api:8008
+soce create-voting 'Temperature' '["22", "24", "26"]' 'borda-voting' --url rest-api:8008
 
-soce register-voter 'voting1' 'voter1' --url rest-api:8008
+soce register-voter 'Temperature' 'VoterUsername' --url rest-api:8008
 
 soce get-all-info --url rest-api:8008
 
-soce get-entity-info 'voting1' --url rest-api:8008
+soce get-entity-info 'Temperature' --url rest-api:8008
 
-soce apply-voting-method 'voting1' --url rest-api:8008
+soce apply-voting-method 'Temperature' --url rest-api:8008
 
-soce set-preferences 'voting1' 'voter1' '{"a":3, "b":2}' --url rest-api:8008
+soce set-preferences 'Temperature' 'VoterUsername' '{"22":-6, "24":5, "26":8}' --url rest-api:8008
 
-soce unregister-voter 'voting1' 'voter1' --url rest-api:8008
+soce unregister-voter 'Temperature' 'VoterUsername' --url rest-api:8008
 
 
 
+-------------------------------------
+
+
+soce create-voting 'Temperature' '["22", "24", "26"]' 'borda-voting' --url rest-api:8008
+
+soce register-voter 'Temperature' 'VoterUsername' --url rest-api:8008
+
+soce create-voting 'TV Channel' '["Sport", "News", "Films"]' 'borda-voting' --url rest-api:8008
+
+soce register-voter 'TV Channel' 'VoterUsername' --url rest-api:8008
+
+soce create-voting 'Music' '["Rock", "Pop", "ChillOut"]' 'borda-voting' --url rest-api:8008
+
+soce register-voter 'Music' 'VoterUsername' --url rest-api:8008

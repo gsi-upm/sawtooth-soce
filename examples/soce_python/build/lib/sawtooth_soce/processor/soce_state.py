@@ -200,7 +200,7 @@ class SoceState:
         votings_strs = []
         for name, voting in votings.items():
             voting_strs = ";".join(
-                [name, json.dumps(voting.configurations), 
+                [name, str(voting.configurations), 
                 str(voting.method), str(voting.winner), 
                 json.dumps(voting.preferences)])
             votings_strs.append(voting_strs)
